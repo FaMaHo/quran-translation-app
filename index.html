@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran Translation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            direction: ltr;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .excel-setup {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+        }
+        select, input, button {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .ayah-container {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .arabic {
+            font-size: 26px;
+            margin-bottom: 15px;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.8;
+            color: #000;
+            font-family: 'Traditional Arabic', 'Scheherazade New', serif;
+        }
+        .translation {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .explanation {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        .ayah-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .ayah-number {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: #3498db;
+            color: white;
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toggle-explanation {
+            background-color: #eee;
+            color: #333;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            background-color: #eee;
+            color: #333;
+        }
+        .pagination button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .settings {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        /* Dark mode toggle */
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        /* Dark theme */
+        .dark-theme {
+            background-color: #1a1a1a;
+            color: #f5f5f5;
+        }
+        .dark-theme .ayah-container, 
+        .dark-theme .controls, 
+        .dark-theme .excel-setup,
+        .dark-theme .no-data {
+            background-color: #2d2d2d;
+            color: #f5f5f5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .dark-theme h1 {
+            color: #f5f5f5;
+        }
+        .dark-theme .arabic {
+            color: #f5f5f5;
+        }
+        .dark-theme .translation {
+            color: #e0e0e0;
+        }
+        .dark-theme .explanation {
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+        }
+        .dark-theme select, 
+        .dark-theme input {
+            background-color: #3d3d3d;
+            color: #f5f5f5;
+            border-color: #555;
+        }
+        .dark-theme .toggle-explanation {
+            background-color: #4d4d4d;
+            color: #f5f5f5;
+        }
+        /* Loading indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3498db;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dark-theme .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #3498db;
+        }
+        /* Font size controls */
+        .font-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .font-button {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switch">
+        <button id="toggleTheme">🌙 / ☀️</button>
+    </div>
+
+    <h1>Quran Translation</h1>
+    
+    <div class="excel-setup">
+        <h3>Setup Your Excel Database</h3>
+        <p>Select your Excel file containing the Quran translations. This file will be saved in your browser for future visits:</p>
+        <div class="settings">
+            <input type="file" id="excelFile" accept=".xlsx, .xls"/>
+            <button id="saveSettings">Save as Database</button>
+        </div>
+        <div class="file-info" id="fileInfo">No database file selected yet</div>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label for="surahSelector">Surah:</label>
+            <select id="surahSelector">
+                <option value="all">All Surahs</option>
+                <!-- Will be populated with Surah numbers -->
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="pageSelector">Page:</label>
+            <select id="pageSelector">
+                <option value="all">All Pages</option>
+                <!-- Will be populated with page numbers -->
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="jozzSelector">Jozz:</label>
+            <select id="jozzSelector">
+                <option value="all">All Jozz</option>
+                <!-- Will be populated with jozz numbers -->
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="searchBox">Search:</label>
+            <input type="text" id="searchBox" placeholder="Search translations..." />
+        </div>
+
+        <div class="control-group">
+            <label>Font Size:</label>
+            <div class="font-controls">
+                <button class="font-button" id="decreaseArabic">A-</button>
+                <span>Arabic</span>
+                <button class="font-button" id="increaseArabic">A+</button>
+                
+                <button class="font-button" id="decreaseTranslation">A-</button>
+                <span>Translation</span>
+                <button class="font-button" id="increaseTranslation">A+</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading Quran data...</p>
+    </div>
+    
+    <div id="translationContent">
+        <div class="no-data">
+            <p>Please select and save your Excel file as database first.</p>
+        </div>
+    </div>
+    
+    <div class="pagination" id="pagination">
+        <!-- Pagination buttons will be added here -->
+    </div>
+
+    <script>
+        // Global variables
+        let quranData = [];
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let arabicFontSize = 26;
+        let translationFontSize = 18;
+        
+        // DOM elements
+        const fileInput = document.getElementById('excelFile');
+        const saveButton = document.getElementById('saveSettings');
+        const fileInfo = document.getElementById('fileInfo');
+        const surahSelector = document.getElementById('surahSelector');
+        const pageSelector = document.getElementById('pageSelector');
+        const jozzSelector = document.getElementById('jozzSelector');
+        const searchBox = document.getElementById('searchBox');
+        const contentArea = document.getElementById('translationContent');
+        const paginationArea = document.getElementById('pagination');
+        const loadingIndicator = document.getElementById('loading');
+        const toggleThemeButton = document.getElementById('toggleTheme');
+        
+        // Event listeners
+        saveButton.addEventListener('click', saveExcelDatabase);
+        surahSelector.addEventListener('change', handleFilterChange);
+        pageSelector.addEventListener('change', handleFilterChange);
+        jozzSelector.addEventListener('change', handleFilterChange);
+        searchBox.addEventListener('input', handleFilterChange);
+        toggleThemeButton.addEventListener('click', toggleTheme);
+        
+        // Font size controls
+        document.getElementById('increaseArabic').addEventListener('click', () => {
+            arabicFontSize += 2;
+            updateFontSizes();
+        });
+        
+        document.getElementById('decreaseArabic').addEventListener('click', () => {
+            if (arabicFontSize > 16) arabicFontSize -= 2;
+            updateFontSizes();
+        });
+        
+        document.getElementById('increaseTranslation').addEventListener('click', () => {
+            translationFontSize += 2;
+            updateFontSizes();
+        });
+        
+        document.getElementById('decreaseTranslation').addEventListener('click', () => {
+            if (translationFontSize > 12) translationFontSize -= 2;
+            updateFontSizes();
+        });
+        
+        // Update font sizes
+        function updateFontSizes() {
+            document.querySelectorAll('.arabic').forEach(el => {
+                el.style.fontSize = `${arabicFontSize}px`;
+            });
+            
+            document.querySelectorAll('.translation').forEach(el => {
+                el.style.fontSize = `${translationFontSize}px`;
+            });
+            
+            // Save preferences
+            localStorage.setItem('arabicFontSize', arabicFontSize);
+            localStorage.setItem('translationFontSize', translationFontSize);
+        }
+        
+        // Toggle dark/light theme
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('darkTheme', document.body.classList.contains('dark-theme'));
+        }
+        
+        // Save Excel file as database
+        async function saveExcelDatabase() {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select an Excel file first.');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            showLoading(true);
+            
+            try {
+                // Read the file
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                
+                // Store the binary data in IndexedDB
+                await saveToIndexedDB('quranDB', 'excelFiles', {
+                    id: 'quranTranslation',
+                    name: file.name,
+                    data: arrayBuffer,
+                    lastModified: file.lastModified,
+                    size: file.size
+                });
+                
+                // Process the Excel file
+                const workbook = XLSX.read(arrayBuffer, {type: 'array'});
+                await processExcelData(workbook);
+                
+                fileInfo.textContent = `Database: ${file.name} (${formatBytes(file.size)})`;
+                
+                // Store file info
+                localStorage.setItem('quranFileInfo', JSON.stringify({
+                    name: file.name,
+                    size: file.size,
+                    lastModified: file.lastModified
+                }));
+                
+            } catch (error) {
+                console.error('Error processing Excel file:', error);
+                alert('Error processing Excel file: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Process Excel data
+        async function processExcelData(workbook) {
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // Convert to JSON
+            quranData = XLSX.utils.sheet_to_json(worksheet);
+            
+            // Setup the selectors
+            setupSelectors();
+            
+            // Display translations
+            handleFilterChange();
+        }
+        
+        // Setup selectors with unique values
+        function setupSelectors() {
+            // Setup Surah selector
+            const surahs = [...new Set(quranData.map(item => item.sura_no))].sort((a, b) => a - b);
+            populateSelector(surahSelector, surahs, 'Surah');
+            
+            // Setup Page selector
+            const pages = [...new Set(quranData.map(item => item.page))].sort((a, b) => a - b);
+            populateSelector(pageSelector, pages, 'Page');
+            
+            // Setup Jozz selector
+            const jozzs = [...new Set(quranData.map(item => item.jozz))].sort((a, b) => a - b);
+            populateSelector(jozzSelector, jozzs, 'Jozz');
+        }
+        
+        // Populate selector with options
+        function populateSelector(selector, values, prefix) {
+            // Keep the first option (All...)
+            while (selector.options.length > 1) {
+                selector.remove(1);
+            }
+            
+            // Add new options
+            values.forEach(value => {
+                if (value !== undefined && value !== null) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = `${prefix} ${value}`;
+                    selector.appendChild(option);
+                }
+            });
+        }
+        
+        // Handle filter changes
+        function handleFilterChange() {
+            currentPage = 1; // Reset to first page on filter change
+            displayTranslations();
+        }
+        
+        // Display translations based on filters
+        function displayTranslations() {
+            const selectedSurah = surahSelector.value;
+            const selectedPage = pageSelector.value;
+            const selectedJozz = jozzSelector.value;
+            const searchTerm = searchBox.value.toLowerCase();
+            
+            // Filter data
+            let filteredData = quranData;
+            
+            if (selectedSurah !== 'all') {
+                filteredData = filteredData.filter(item => item.sura_no == selectedSurah);
+            }
+            
+            if (selectedPage !== 'all') {
+                filteredData = filteredData.filter(item => item.page == selectedPage);
+            }
+            
+            if (selectedJozz !== 'all') {
+                filteredData = filteredData.filter(item => item.jozz == selectedJozz);
+            }
+            
+            if (searchTerm) {
+                filteredData = filteredData.filter(item => 
+                    (item.Translation && item.Translation.toLowerCase().includes(searchTerm)) ||
+                    (item.aya_text && item.aya_text.includes(searchTerm))
+                );
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+            
+            // Display the filtered verses
+            renderVerses(paginatedData, filteredData.length);
+            
+            // Update pagination
+            renderPagination(totalPages);
+            
+            // Update font sizes
+            updateFontSizes();
+        }
+        
+        // Render verses to the DOM
+        function renderVerses(verses, totalCount) {
+            contentArea.innerHTML = '';
+            
+            if (verses.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="no-data">
+                        <p>No verses found matching your criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            verses.forEach(verse => {
+                const ayahDiv = document.createElement('div');
+                ayahDiv.className = 'ayah-container';
+                
+                // Get explanation text
+                const explanations = [];
+                for (let i = 1; i <= 11; i++) {
+                    const key = `Explanation${i < 10 ? '0' + i : i}`;
+                    if (verse[key] && verse[key].trim()) {
+                        explanations.push(verse[key]);
+                    }
+                }
+                
+                const hasExplanation = explanations.length > 0;
+                
+                ayahDiv.innerHTML = `
+                    <div class="ayah-info">
+                        <span>Surah ${verse.sura_no} (${verse.sura_name_en || ''}) - Verse ${verse.aya_no}</span>
+                        <span>Page ${verse.page}, Jozz ${verse.jozz}</span>
+                    </div>
+                    <span class="ayah-number">${verse.aya_no}</span>
+                    <div class="arabic">${verse.aya_text || ''}</div>
+                    <div class="translation">${verse.Translation || ''}</div>
+                    ${hasExplanation ? `
+                        <button class="toggle-explanation">Show Explanation</button>
+                        <div class="explanation">${explanations.join('<br><br>')}</div>
+                    ` : ''}
+                `;
+                
+                contentArea.appendChild(ayahDiv);
+                
+                // Add event listener for explanation toggle
+                if (hasExplanation) {
+                    const toggleBtn = ayahDiv.querySelector('.toggle-explanation');
+                    const explanation = ayahDiv.querySelector('.explanation');
+                    
+                    toggleBtn.addEventListener('click', () => {
+                        const isVisible = explanation.style.display === 'block';
+                        explanation.style.display = isVisible ? 'none' : 'block';
+                        toggleBtn.textContent = isVisible ? 'Show Explanation' : 'Hide Explanation';
+                    });
+                }
+            });
+        }
+        
+        // Render pagination controls
+        function renderPagination(totalPages) {
+            paginationArea.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // Previous button
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '←';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayTranslations();
+                    window.scrollTo(0, 0);
+                }
+            });
+            paginationArea.appendChild(prevButton);
+            
+            // Page numbers
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.classList.toggle('active', i === currentPage);
+                pageButton.addEventListener('click', () => {
+                    currentPage = i;
+                    displayTranslations();
+                    window.scrollTo(0, 0);
+                });
+                paginationArea.appendChild(pageButton);
+            }
+            
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '→';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayTranslations();
+                    window.scrollTo(0, 0);
+                }
+            });
+            paginationArea.appendChild(nextButton);
+        }
+        
+        // IndexedDB functions
+        async function openDB(dbName, storeName) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName, { keyPath: 'id' });
+                    }
+                };
+                
+                request.onsuccess = function(event) {
+                    resolve(event.target.result);
+                };
+                
+                request.onerror = function(event) {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        async function saveToIndexedDB(dbName, storeName, data) {
+            const db = await openDB(dbName, storeName);
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.put(data);
+                
+                request.onsuccess = function() {
+                    resolve();
+                };
+                
+                request.onerror = function(event) {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        async function getFromIndexedDB(dbName, storeName, id) {
+            const db = await openDB(dbName, storeName);
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(id);
+                
+                request.onsuccess = function(event) {
+                    resolve(event.target.result);
+                };
+                
+                request.onerror = function(event) {
+                    reject(event.target.error);
+                };
+            });
+        }
+        
+        // Helper functions
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = error => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        function showLoading(show) {
+            loadingIndicator.style.display = show ? 'block' : 'none';
+        }
+        
+        // Load saved data on page load
+        async function loadSavedData() {
+            try {
+                // Load preferences
+                if (localStorage.getItem('darkTheme') === 'true') {
+                    document.body.classList.add('dark-theme');
+                }
+                
+                if (localStorage.getItem('arabicFontSize')) {
+                    arabicFontSize = parseInt(localStorage.getItem('arabicFontSize'));
+                }
+                
+                if (localStorage.getItem('translationFontSize')) {
+                    translationFontSize = parseInt(localStorage.getItem('translationFontSize'));
+                }
+                
+                // Check if we have file info
+                const fileInfoStr = localStorage.getItem('quranFileInfo');
+                if (!fileInfoStr) return;
+                
+                const fileInfoObj = JSON.parse(fileInfoStr);
+                fileInfo.textContent = `Database: ${fileInfoObj.name} (${formatBytes(fileInfoObj.size)})`;
+                
+                // Load from IndexedDB
+                showLoading(true);
+                const excelData = await getFromIndexedDB('quranDB', 'excelFiles', 'quranTranslation');
+                
+                if (excelData && excelData.data) {
+                    // Process the Excel data
+                    const workbook = XLSX.read(excelData.data, {type: 'array'});
+                    await processExcelData(workbook);
+                }
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Initialize app
+        window.addEventListener('DOMContentLoaded', loadSavedData);
+    </script>
+</body>
+</html>
